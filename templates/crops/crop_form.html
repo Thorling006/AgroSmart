@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{% if edit_mode %}Editar cultivo{% else %}Nuevo cultivo{% endif %}</h2>
+<form method="post">
+  {% csrf_token %}
+
+  <p>
+    {{ form.name.label_tag }}<br>
+    {{ form.name }}
+  </p>
+  <p>
+    {{ form.description.label_tag }}<br>
+    {{ form.description }}
+  </p>
+  <p>
+    {{ form.country_code.label_tag }}<br>
+    {{ form.country_code }}
+  </p>
+  <p>
+    {{ form.sowing_date.label_tag }}<br>
+    {{ form.sowing_date }}
+  </p>
+
+  {# Hidden latitude/longitude fields that the map will populate #}
+  {{ form.latitude }}
+  {{ form.longitude }}
+
+  <h4>Ubicación (haz clic en el mapa para colocar un pin)</h4>
+  <div id="crop-map" style="height:300px; border:1px solid #ccc; margin-bottom:1rem; border-radius:4px;"></div>
+
+
+
+  <h4>Fechas óptimas para plantar</h4>
+  <div style="margin-bottom:8px;font-weight:bold;">{{ month }}/{{ year }}</div>
+  <div id="calendar-container" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:1rem;">
+    {% for day in calendar_data %}
+      <span class="calendar-day calendar-{{ day.color }}" style="display:block;padding:8px 0;border-radius:4px;text-align:center;font-weight:bold;box-shadow:0 1px 4px #0001;{% if day.color == 'verde' %}background:#28a745;color:#fff;{% elif day.color == 'amarillo' %}background:#ffc107;color:#333;{% else %}background:#dc3545;color:#fff;{% endif %}">
+        {{ day.day }}
+      </span>
+    {% endfor %}
+  </div>
+
+  <button class="btn btn-cultivo" type="submit" style="min-width:140px;font-size:1.08rem;font-weight:500;border-radius:0.7rem;padding:0.55rem 1.1rem;box-shadow:0 2px 8px #6f42c133;background:linear-gradient(90deg,#e0ffe0 0%,#b2f7b2 100%);color:#2d6a4f;border:1px solid #b2f7b2;">{% if edit_mode %}Actualizar{% else %}Guardar{% endif %}</button>
+  <a class="btn btn-cultivo btn-cancelar" href="{% url 'crop_list' %}" style="background:linear-gradient(90deg,#ffe0e0 0%,#f7b2b2 100%);color:#a42d2d;border:1px solid #f7b2b2;min-width:140px;font-size:1.08rem;font-weight:500;border-radius:0.7rem;padding:0.55rem 1.1rem;box-shadow:0 2px 8px #6f42c133;margin-left:8px;">Cancelar</a>
+</form>
+
+{% load static %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  (function () {
+    // Default center (El Salvador) if no coordinates exist
+    const defaultCenter = [13.7, -89.2];
+
+    // Try to read existing latitude/longitude from form inputs
+    function getInput(name) {
+      const el = document.querySelector('input[name="' + name + '"]');
+      return el ? el.value : null;
+    }
+
+    const latVal = parseFloat(getInput('latitude')) || null;
+    const lonVal = parseFloat(getInput('longitude')) || null;
+    const center = (latVal && lonVal) ? [latVal, lonVal] : defaultCenter;
+
+    // Wait for Leaflet
+    function ready(cb) {
+      if (typeof L !== 'undefined') return cb();
+      setTimeout(() => ready(cb), 50);
+    }
+
+    ready(function () {
+      const map = L.map('crop-map').setView(center, 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+      let marker = null;
+      if (latVal && lonVal) {
+        marker = L.marker([latVal, lonVal]).addTo(map);
+      }
+
+      map.on('click', function (e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        // Move or create marker
+        if (marker) {
+          marker.setLatLng([lat, lng]);
+        } else {
+          marker = L.marker([lat, lng]).addTo(map);
+        }
+
+        // Set hidden inputs
+        const latIn = document.querySelector('input[name="latitude"]');
+        const lonIn = document.querySelector('input[name="longitude"]');
+        if (latIn) latIn.value = lat.toFixed(6);
+        if (lonIn) lonIn.value = lng.toFixed(6);
+      });
+    });
+  })();
+</script>
+{% endblock %}

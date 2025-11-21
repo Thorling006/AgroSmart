@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<h1 class="dashboard-title"><span class="icon-agro">🌾</span> Detalle de Cultivo</h1>
+<div class="card card-agro mb-4">
+  <div class="card-body">
+    <h3 class="card-title">{{ crop.name }}</h3>
+    <p class="card-text">{{ crop.description }}</p>
+    <p><strong>Fecha de siembra:</strong> {{ crop.sowing_date|date:"d M Y" }}</p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a href="{% url 'crop_edit' crop.id %}" class="btn btn-agro">✏️ Editar</a>
+      <a href="{% url 'crop_delete' crop.id %}" class="btn btn-agro">🗑️ Eliminar</a>
+      <a href="{% url 'abono_application' crop.id %}" class="btn btn-agro">🧪 Historial de abonos</a>
+      <a href="{% url 'download_crop_pdf_user' crop.id %}" class="btn btn-agro">📄 PDF</a>
+    </div>
+  </div>
+</div>
+{% if weather %}
+<div class="alert alert-info mb-4">
+  <strong>Clima actual:</strong> {{ weather.temperature }}°C, Humedad: {{ weather.humidity }}%, Lluvia: {{ weather.rain_mm }} mm, Viento: {{ weather.wind_ms }} m/s
+</div>
+{% endif %}
+{% if recommendation %}
+<div class="alert alert-success mb-4">
+  <strong>Recomendación IA:</strong> {{ recommendation }}
+</div>
+{% endif %}
+{% if error %}
+<div class="alert alert-danger mb-4">
+  <strong>Error:</strong> {{ error }}
+</div>
+{% endif %}
+<section>
+  <h3>Mapa meteorológico (en tiempo real)</h3>
+  <div id="weather-map" style="height:480px; border:1px solid #ddd; margin-bottom:1rem;"></div>
+  <script>
+  window.WEATHER_MAP_CONFIG = JSON.parse("{{ weather_map_config_json|escapejs }}");
+  </script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="{% static 'js/weather_map.js' %}"></script>
+  {% if not openweather_api_key %}
+  <p style="margin-top:.5rem; font-size:.95rem; color:#444;">Nota: para capas globales de temperatura/nubes/precipitación añade <code>OPENWEATHERMAP_API_KEY</code> en tu <code>.env</code>. Mientras tanto el mapa base (OpenStreetMap) y un marcador con los datos actuales estarán visibles.</p>
+  {% endif %}
+</section>
+{# Aquí se puede agregar el calendario de fechas óptimas para plantar #}
+{% if calendar_data %}
+<section>
+  <h3>Fechas óptimas para plantar</h3>
+  <div class="calendar-container">
+    {% for day in calendar_data %}
+      <span class="calendar-day calendar-{{ day.color }}">{{ day.day }}</span>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
