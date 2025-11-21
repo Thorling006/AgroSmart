@@ -15,8 +15,12 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-dev-key-solo-local")
 # Activar el modo de depuración (solo en desarrollo)
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-# Listar dominios permitidos (al desplegar en producción, agrega los dominios aquí)
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '26.143.65.69']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '26.143.65.69',
+    'agrosmart-x1pb.onrender.com',  # dominio de Render
+]
 
 # Aplicaciones instaladas
 INSTALLED_APPS = [
